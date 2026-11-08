@@ -1,22 +1,58 @@
 package modulo4_3_actividad14;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
 import org.junit.jupiter.api.Test;
 
 class Actividad14Test {
-  @Test
-  void salidaEsperada() throws Exception {
-    ByteArrayOutputStream b = new ByteArrayOutputStream();
-    PrintStream old = System.out;
-    System.setOut(new PrintStream(b, true, StandardCharsets.UTF_8));
-    try {
-      Actividad14.main(new String[0]);
-    } finally {
-      System.setOut(old);
+
+    @Test
+    void salidaEsperada() throws Exception {
+        String salida = ejecutar();
+        assertEquals("casa\nperro", salida);
     }
-    assertEquals("casa\nperro", b.toString(StandardCharsets.UTF_8).replace("\r\n", "\n").trim());
-  }
+
+    @Test
+    void compruebaCodigo() throws Exception {
+        String codigo = leerCodigo();
+        assertTrue(contiene(codigo, "\\.\\s*compareTo(IgnoreCase)?\\s*\\("), "Debe usarse compareTo()");
+    }
+
+    private static String ejecutar() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        Locale originalLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+        System.setOut(new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        try {
+            Actividad14.main(new String[0]);
+        } finally {
+            System.setOut(originalOut);
+            Locale.setDefault(originalLocale);
+        }
+        String texto = buffer.toString(StandardCharsets.UTF_8).replace("\r\n", "\n").replace('\r', '\n');
+        StringBuilder salida = new StringBuilder();
+        for (String linea : texto.split("\n")) {
+            salida.append(linea.strip()).append("\n");
+        }
+        return salida.toString().strip();
+    }
+
+    private static String leerCodigo() throws Exception {
+        String codigo = Files.readString(Path.of("src/main/java/modulo4_3_actividad14/Actividad14.java"));
+        return codigo.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("//[^\n]*", "");
+    }
+
+    private static boolean contiene(String codigo, String regex) {
+        return Pattern.compile(regex).matcher(codigo).find();
+    }
 }
